@@ -1,279 +1,368 @@
-# Golang基本语法
-
 @[TOC](目录)
 
-## 切片slice
+# Golang基本语法
 
-切片与数组一样表示多个同类型元素的连续集合，但是切片本身并不存储任何元素，而只是对现有数组的引用。
+## 基本变量与类型
+
+### 变量声明及赋值
+
+
+
+1. 声明变量的一般形式是使用`var`关键字：
+
+   ```go
+   var 变量名 变量类型
+   ```
+
+2. 也可以使用`var()`批量声明变量：
+
+   ```go
+   var (
+   	变量名1 变量类型1
+       变量名2 变量类型2	
+   )
+   ```
+
+3. 还可以使用短变量声明并初始化：
+
+   ```go
+   var a int := 3
+   ```
+
+   短变量声明并初始化只能在函数内使用。
+
+4. 变量类型省略后，Go编译器在编译时会根据等号右边表达式推导变量的类型。
+
+   ```go
+   var a = 15
+   str := "Hello"
+   ```
+
+5. 使用短变量给多个变量赋值时，必须要保证至少有一个变量是没有声明过的。
+
+   ```go
+   func main() {
+   	var (
+   		a = 1
+   		b = true
+   		c = "yyds"
+   	)
+   	// 短变量操作多个值时要保证里面至少有一个新变量
+   	b, c, d := false, "aaaa", 3
+   	fmt.Println(a, b, c, d)
+   }
+   ```
+   
+6. GO语言要求变量声明后至少要使用一次（赋值不属于使用）。
 
 &nbsp;
 
-切片结构包括：地址、长度和容量。
+当一个变量被声明后，系统会自动赋予它该类型的零值，即所有的内存在Go中都是经过初始化的。
 
-1. 地址：切片的地址一般指切片中第一个元素所指向的内存地址，用十六进制表示。
-2. 长度：切片中实际存在的元素的个数。
-3. 容量：从切片的起始元素开始到其底层数组中的最后一个元素的个数。
-
-&nbsp;
-
-切片的长度和容量都是不固定的，可以通过追加元素使切片的长度和容量增大。
+1. 整型和浮点型的默认值为0
+2. string为空字符串
+3. bool为false
+4. 指针为nil
 
 &nbsp;
 
-切片主要有三种生成方式：
+### 内建变量类型
 
-1. 从数组生成一个新的切片。
-2. 从切片生成一个新的切片。
-3. 直接生成一个新的切片。
-
+1. bool、string
+2. (u)int、(u)int8、(u)int16、(u)int32、(u)int64、uintptr
+3. byte、rune
+4. float32、float64、complex64、complex128
 
 
 &nbsp;
 
-### 从数组生成一个新的切片
+#### 整型
+
+1. 有符号整型：int8、int16、int32、int64。
+2. 无符号整型：uint8、uint16、uint32、uint64。
+
+有符号整型其二进制最高位存储符号，因此两者的区别就是无符号整型可以存放的正数范围比有符号整型中的整数范围大一倍。
+
+1. 有符号整数范围：$${-2}^{n-1}$$ 到 $$2^{n-1}-1$$
+2. 无符号整数范围：0 到 $$2^n-1$$
+
+|    类型 | 取值范围                                                     |
+| ------: | :----------------------------------------------------------- |
+|    int8 | [-128 , 127]                                                 |
+|   int16 | [-32768 , 32767]                                             |
+|   int32 | [-2147483648 , 2147483647] Go语言中没有字符类型,所有字符都使用int32存储 |
+|   int64 | [-9223372036854775808 , 9223372036854775807]                 |
+|     int | 受限于计算机系统,系统是多少位,int为多少位                    |
+|   uint8 | [0 , 255]                                                    |
+|  uint16 | [0 , 65535]                                                  |
+|  uint32 | [0 , 4294967295]                                             |
+|  uint64 | [0 , 18446744073709551615]                                   |
+|    uint | 受限于计算机系统,系统是多少位,uint为多少位                   |
+|    rune | 与int32类似,常用在获取值的Unicode码                          |
+|    byte | 与uint8类似.强调值为原始数据.一个字节占用8个二进制           |
+| uintptr | 大小不确定,类型取决于底层编程                                |
+
+&nbsp;
+
+##### 强制类型转换
+
+* Go语言是静态类型语言，并且不具备低精度向高精度自动转换的功能，所以不同类型变量之间相互赋值需要进行类型转换。
 
 ```go
-package main
-
-import (
-	"fmt"
-)
-
-func main() {
-	var student = [...]string{"Tom", "Ben", "Peter"}
-	var student1 = student[0:2]
-	fmt.Println("student数组：", student)
-	fmt.Println("student1切片：", student1)
-	fmt.Println("student数组地址为：", &student[0])
-	fmt.Println("student1切片地址为：", &student1[0])
-
-	fmt.Println("student1切片长度为：", len(student1))
-	fmt.Println("student1切片容量为：", cap(student1))
+func triangle() {
+	var a, b int = 3, 4
+	var c int
+	c = int(math.Sqrt(float64(a*a + b*b)))
+	fmt.Println(c)
 }
 ```
 
-![image-20211020194939355](C:\Users\whh\AppData\Roaming\Typora\typora-user-images\image-20211020194939355.png)
+&nbsp;
 
-运行上面这段代码，我们可以发现：
+##### 不同进制整数
 
-1. 新生成的切片长度 = 结束位置 - 开始位置
-2. 新生成的切片取出的元素不包括结束位置对应的元素（左闭右开）。
-3. 新生成的切片是对现有数组或切片的引用，其地址与截取的数组或切片开始位置对应的元素地址相同。
-4. 新生成的切片容量指从切片的起始元素开始到其底层数组中的最后一个元素的个数。
+* Go语言支持八进制、十进制、十六进制创建整型，但不支持二进制值，最后由系统转换为十进制。
+
+  ```go
+  func main() {
+  	//默认表示十进制
+  	d := 17
+  	
+  	//0开头表示八进制
+  	o := 021
+  	
+  	//0x开头表示十六进制
+  	x := 0x11
+  	
+  	//e2表示10的2次方
+  	e := 11e2
+  	
+  	//输出
+  	fmt.Println(d, o, x, e)
+  	
+  	//把变量d中内容转换为二进制
+  	b := fmt.Sprintf("%b", d)
+  	fmt.Println(b)
+  }
+  ```
+
 
 &nbsp;
 
-### 直接生成一个新的切片
+#### 浮点型
 
-1. 声明切片
+1. 一个整数数值可以赋值给浮点类型，但是一个整型变量不可以赋值给浮点类型。
 
-   切片的声明格式：
+2. 浮点数取值范围：
 
-   > var 切片变量名 []元素类型
+   |  类型   |                    取值范围                    |
+   | :-----: | :--------------------------------------------: |
+   | float32 |  3.40282346638528859811704183484516925440e+38  |
+   | float64 | 1.797693134862315708145274237317043567981e+308 |
 
-   切片声明后，其内容为空，长度和容量均为0。
+3. 可以通过math快速获取浮点数的最大值：
 
-2. 初始化切片
-
-   1. 在声明的同时初始化
-
-      ```go
-      var student = []string{"Tom", "Ben", "Peter"}
-      ```
-
-   2. 使用make()函数初始化
-
-      声明完切片后，可以通过内置函数make()来初始化切片，格式如下：
-
-      ```go
-      slice = make ([]元素类型, 切片长度, 切片容量)
-      ```
-
-      对切片的容量应该有个大概的估值，若容量过小，对切片的多次扩充会造成性能损耗。
-
-3. 为切片添加元素
-
-   Go语言中，我们可以使用append()函数来对切片进行元素的添加。当切片长度值等于容量值时，下一次使用append()函数对切片进行元素添加，容量会按2被数进行扩充。
-
-   ```go
-   func main() {
-   	student := make([]int, 1, 1)
-   	for i := 0; i < 8; i++ {
-   		student = append(student, i)
-   		fmt.Println("当前切片的长度：", len(student),"当前切片的容量：", cap(student))
-   	}
-   }
-   ```
-
-   ![image-20211020204757431](C:\Users\whh\AppData\Roaming\Typora\typora-user-images\image-20211020204757431.png)
-
-4. 从切片中删除元素
-
-   由于Go语言没有为删除切片元素提供方法，所以需要我们手动将删除点前后的元素连接起来，从而实现对切片中元素的删除。
-
-   ```go
-   func main() {
-   	var student = []string{"Tom", "Ben", "Peter", "Danny"}
-   	student = append(student[0:1], student[2:]...)
-       //student = student[0:0]	清空切片中所有的元素
-   	fmt.Println("student切片：", student)
-   	fmt.Println("student切片长度：", len(student))
-   	fmt.Println("student切片容量：", cap(student))
-   }
-   ```
-
-   ![image-20211020205756950](C:\Users\whh\AppData\Roaming\Typora\typora-user-images\image-20211020205756950.png)
-
-   其中append()函数中传入省略号代表按student切片展开，等价于：
-
-   ```go
-   student = append(student[0:1], student[2], student[3])
-   ```
-
-   清空切片中所有的元素可以把切片的开始和结束下标都设为0来实现。
-
-&nbsp;
-
-## 映射map
-
-映射（map）是一种无序的键值对的集合，map的键类似于索引，指向数据的值。
-
-&nbsp;
-
-1. 声明映射
-
-   map的声明格式如下：
-
-   ```go
-   var map [键类型]值类型
-   ```
-
-2. 初始化映射
-
-   1. 在声明的同时初始化
-
-      ```go
-      func main() {
-      	var studentScoreMap = map[string]int {
-      		"Tom" : 80,
-      		"Ben" : 85,
-      		"Peter" : 90,
-      	}
-      	fmt.Println(studentScoreMap)	// map[Ben:85 Peter:90 Tom:80]
-      }
-      ```
-
-   2. 使用make()函数初始化
-
-      格式如下：
-
-      ```go
-      make(map[键类型]值类型, map容量)
-      ```
-
-      使用make()函数初始化时可以不指定map容量，但是对于map的多次扩充会造成性能损耗。
-
-3. 从映射中删除键值对
-
-   Go语言通过delete()函数来对map的指定键值对进行删除操作，格式如下：
-
-   ```go
-   delete(map实例, 键)
-   ```
-
-   另外Go语言没有为map提供清空所有元素的方法，想要清空map的唯一方法就是重新定义一个新的map。
-   
    ```go
    package main
    
-   import "fmt"
+   import (
+   	"fmt"
+   	"math"
+   )
    
    func main() {
-   	var studentScoreMap map[string]int
-   	studentScoreMap = make(map[string]int)
-   	studentScoreMap["Tom"] = 80
-   	studentScoreMap["Ben"] = 70
-   	studentScoreMap["Peter"] = 90
-   	delete(studentScoreMap, "Tom")
-   		fmt.Println(studentScoreMap) // map[Ben:70 Peter:90]
+   	fmt.Println(math.MaxFloat32)
+   	fmt.Println(math.MaxFloat64)
    }
-   ```
-   
-   &nbsp;
-   
-## 函数
-
-   Go语言函数支持的特性：
-
-   1. 参数数量不固定（可变参数）。
-   2. 匿名函数及闭包。
-   3. 函数本身作为值传递。
-   4. 函数的延迟执行。
-   5. 把函数作为接口调用。
-
-&nbsp;
-
-### 声明函数
-
-格式如下：
-
-```go
-func 函数名（参数列表） （返回参数列表） {
-    函数体
-}
-```
-
-1. 在参数列表中，如果相邻的变量为同类型，则不必重复写出类型。
-
-   ```go
-   func add(x, y int) (sum int) {
-       sum = x + y
-       return sum
-   }
-   ```
-
-2. 如果函数的返回值都是同一类型，在返回值列表中可以将返回参数省略。
-
-   ```go
-   func returnValue() (int, int) {
-       return 0, 1
-   }// 不推荐这种写法，代码可读性降低，无法区分每个返回值的实际意义。
    ```
 
 &nbsp;
 
-### 函数变量
+#### 布尔类型
 
-Go语言中，函数也是一种类型，我们可以将其保存在变量中。
+1. 布尔类型占用1个byte。
 
-```go
-var 变量名称 func()
-```
+2. 可以使用unsafe包下的Sizeof()查看类型占用字节大小。
 
-```go
-package main
+   ```go
+   func main() {
+   	a := false
+   	fmt.Println(unsafe.Sizeof(a))
+   }
+   ```
 
-import "fmt"
+3. 虽然bool类型占用一个byte，但是bool不能和byte或int8相互转换。
 
-func addSub(x int, y int) (sum int, sub int) {
-	sum = x + y
-	sub = x - y
-	return sum, sub
-}
+   ```go
+   func main() {
+   	var a int8 = 1
+   	var b byte = 0
+   	var c bool = false
+   	fmt.Println(a, b, c)
+   	a = int8(c) //cannot convert c (type bool) to type int8
+   	b = byte(c) //cannot convert c (type bool) to type byte
+   	c = bool(a) //cannot convert a (type int8) to type bool
+   	c = bool(b) //cannot convert b (type byte) to type bool
+   	b = byte(a) //可以
+   }
+   ```
 
-func main() {
-	a := 1
-	b := 2
-	f1 := addSub
-	//或 var f1 func(x int, y int) (sum int, sub int)
-	//f1 = addSub
-	sum, sub := f1(a, b)
-	fmt.Println(a, "+", b, "=", sum)
-	fmt.Println(a, "-", b, "=", sub)
-}
-```
 
-函数变量可以用短变量格式进行声明和初始化。
+&nbsp;
 
-或者函数变量f1声明后其值初始化为nil，再将addSub函数赋值给f1，所有对f1的调用即为对addSub函数的调用。
+### 常量与枚举(iota)
+
+1. 常量是一个固定值，在编译期就确定结果，声明时必须赋值且结果不可以不改变。
+
+2. 常量定义完可以不使用。
+
+3. 定义常量时如果省略类型，可以直接参与运算。
+
+   ```go
+   func consts() {
+   	const (
+   		filename = "abc.txt"
+   		a, b     = 3, 4
+   	)
+   	var c int
+   	c = int(math.Sqrt(a*a + b*b))	// 此时Sqrt内无需强制类型转换
+   	fmt.Println(filename, c)
+   }
+   ```
+
+4. 常量的值可以是表达式，但不可以出现变量。
+
+5. 定义常量组时，后一个常量如果没有提供初始值，表示将使用上一行的表达式。
+
+   ```go
+   func main() {
+   	const (
+   		a = 1
+   		b
+   		c
+   	)
+   	fmt.Println(a,b,c)//输出:1 1 1
+   }
+   ```
+
+6. iota在const关键字出现时被重置为0，const中每新增一行常量声明，将使iota进行一次计数。
+
+   ```go
+   func main() {
+   	const (
+   		a = 5    //iota=0
+   		b = 3    //iota=1
+   		c = iota //iota=2
+   		d        //iota=3
+   	)
+   	fmt.Println(a, b, c, d) //输出5 3 2 3
+   
+   	const (
+   		e = iota //iota=0
+   		f        //iota=1
+   		g = 10   //iota=2
+   		h        //iota=3
+   		i = iota //iota=4
+   		j        //iota=5
+   	)
+   	fmt.Println(e, f, g, h, i, j) // 0 1 10 10 4 5
+   }
+   ```
+
+&nbsp;
+
+### 条件判断
+
+* if的条件里可以声明变量，这个变量的作用域就在这个if语句里。
+
+  ```go
+  	const filename = "abc.txt"
+  	if contents, err := ioutil.ReadFile(filename); err != nil {
+  		fmt.Print(err)
+  	} else {
+  		fmt.Printf("%s\n", contents)
+  	}
+  ```
+  
+* switch也支持在条件位置定义变量，变量有效范围为当前switch
+
+  ```go
+  func main() {
+  	switch num := 16; num {
+  	case 2:
+  		fmt.Println("2进制")
+  	case 8:
+  		fmt.Println("8进制")
+  	case 10:
+  		fmt.Println("10进制")
+  	case 16:
+  		fmt.Println("16进制")
+  	default:
+  		fmt.Println("内容不正确")
+  	}
+  	fmt.Println("程序结束")
+  }
+  ```
+
+  * default上下位置没有影响，当且仅当所有case都不成立时才执行default
+
+* 当条件是范围而不是固定值时
+
+  ```go
+  func main() {
+  	score := 71
+  	switch {
+  	case score >= 90:
+  		fmt.Println("优秀")
+  	case score >= 80:
+  		fmt.Println("良好")
+  	case score >= 70:
+  		fmt.Println("中等")
+  	case score >= 60:
+  		fmt.Println("及格")
+  	default:
+  		fmt.Println("不及格")
+  	}
+  	fmt.Println("程序结束")
+  }
+  ```
+
+* case条件支持多个值,每个值使用逗号分开
+
+  ```go
+  func main() {
+  	month := 5
+  	switch month {
+  	case 1, 3, 5, 7, 8, 10, 12:
+  		fmt.Println("31天")
+  	case 2:
+  		fmt.Println("28或29天")
+  	default:
+  		fmt.Println("30天")
+  	}
+  	fmt.Println("程序结束")
+  }
+  ```
+
+* switch结构中最多只能执行一个case，会自动break，使用fallthrough可以让下一个case/default继续执行。
+
+  ```go
+  func main() {
+  	switch num := 1; num {
+  	case 1:
+  		fmt.Println("1")
+  		fallthrough
+  	case 2:
+  		fmt.Println("2")
+  	case 3:
+  		fmt.Println("3")
+  		fallthrough
+  	case 4:
+  		fmt.Println("4")
+  	default:
+  		fmt.Println("不是1,2,3,4")
+  	}
+  	fmt.Println("程序结束")
+  }
+  ```
 
